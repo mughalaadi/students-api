@@ -50,3 +50,5 @@ coverage.xml
 
 # Go build cache
 /go/pkg/sumdb/
+
+storage/
