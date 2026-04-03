@@ -12,15 +12,33 @@ import (
 
 	"github.com/mughalaadi/students-api/internal/config"
 	"github.com/mughalaadi/students-api/internal/http/handlers/student"
+	"github.com/mughalaadi/students-api/internal/storage/sqlite"
 )
+
+type sqliteStorageAdapter struct {
+	*sqlite.Sqlite
+}
+
+func (a *sqliteStorageAdapter) CreateStudent(name, email string, age int) (int64, error) {
+	return a.Sqlite.CreateStudent(a, name, email, age)
+}
 
 func main() {
 	// load config
 	cfg := config.MustLoad()
 	// database connection
+	storage, err := sqlite.New(cfg)
+	if err != nil {
+		log.Fatal("Failed to connect to database", err.Error())
+	}
+
+	studentStore := &sqliteStorageAdapter{storage}
+
+	slog.Info("Storage initialized", slog.String("env", cfg.Env), slog.String("version", "1.0.0"))
+
 	// setup router
 	router := http.NewServeMux()
-	router.HandleFunc("POST /api/students", student.New())
+	router.HandleFunc("POST /api/students", student.New(studentStore))
 
 	// setup server
 	server := http.Server{
